@@ -1,0 +1,208 @@
+substitutions:
+  name: towel-rack
+  friendly_name: Toalheiro Eletrico
+
+external_components:
+  - source: github://carnei-ro/esphome-custom-tuya-component
+    components: [tuya]
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  comment: "Crismoe"
+
+bk72xx:
+  board: cb2s
+
+# ----------------------
+# Core services
+# ----------------------
+logger:
+
+api:
+  reboot_timeout: 1440min
+  encryption:
+    key: !secret api_encryption_key
+
+ota:
+  - platform: esphome
+
+web_server:
+  version: 3
+  port: 80
+
+prometheus:
+
+captive_portal:
+
+# ----------------------
+# WiFi
+# ----------------------
+wifi:
+  power_save_mode: none
+  networks:
+    - ssid: !secret wifi_ssid
+      password: !secret wifi_password
+  ap:
+    ssid: "${name}"
+    password: "123456789"
+
+# ----------------------
+# Time
+# ----------------------
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+# ----------------------
+# UART + Tuya
+# ----------------------
+uart:
+  rx_pin: RX1
+  tx_pin: TX1
+  baud_rate: 9600
+  debug:
+
+tuya:
+  time_id: homeassistant_time
+
+# ----------------------
+# Climate (main entity)
+# ----------------------
+climate:
+  - platform: tuya
+    name: "${friendly_name}"
+    icon: mdi:heating-coil
+    switch_datapoint: 1
+    target_temperature_datapoint: 2
+    current_temperature_datapoint: 3
+    supports_heat: true
+    visual:
+      min_temperature: 30
+      max_temperature: 70
+      temperature_step: 5
+
+# ----------------------
+# Tuya Sensors
+# ----------------------
+sensor:
+  # --- Tuya raw/debug ---
+  - platform: tuya
+    name: "DP4 Debug"
+    sensor_datapoint: 4
+    entity_category: diagnostic
+    icon: mdi:bug-outline
+
+  - platform: tuya
+    id: dp14_raw
+    sensor_datapoint: 14
+    entity_category: diagnostic
+
+  - platform: tuya
+    name: "Remaining Time"
+    sensor_datapoint: 13
+    unit_of_measurement: "min"
+    icon: mdi:timer-outline
+
+  # --- System sensors ---
+  - platform: wifi_signal
+    name: "WiFi Signal (dB)"
+    id: wifi_signal_db
+    icon: mdi:wifi
+    update_interval: 60s
+    entity_category: diagnostic
+
+  - platform: copy
+    source_id: wifi_signal_db
+    name: "WiFi Signal (%)"
+    icon: mdi:wifi
+    unit_of_measurement: "%"
+    entity_category: diagnostic
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+
+  - platform: uptime
+    name: "Uptime"
+    update_interval: 300s
+    entity_category: diagnostic
+
+  - platform: internal_temperature
+    name: "Internal Temperature"
+    icon: mdi:thermometer
+
+# ----------------------
+# Binary Sensors
+# ----------------------
+binary_sensor:
+  - platform: status
+    name: "Device Status"
+    icon: mdi:home-assistant
+
+# ----------------------
+# Text Sensors
+# ----------------------
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: "WiFi - IP Address"
+      icon: mdi:wifi
+    ssid:
+      name: "WiFi - Connected SSID"
+      icon: mdi:wifi
+    mac_address:
+      name: "WiFi - MAC Address"
+      icon: mdi:wifi
+
+  - platform: template
+    name: "Heating State"
+    icon: mdi:thermostat-auto
+    lambda: |-
+      if (id(dp14_raw).state == 0) return {"idle"};
+      if (id(dp14_raw).state == 1) return {"heating"};
+      return {"unknown"};
+
+# ----------------------
+# Select (Timer)
+# ----------------------
+select:
+  - platform: tuya
+    name: "Timer"
+    icon: mdi:timer-sand
+    optimistic: true
+    enum_datapoint: 12
+    options:
+      0:  "00h"
+      1:  "01h"
+      2:  "02h"
+      3:  "03h"
+      4:  "04h"
+      5:  "05h"
+      6:  "06h"
+      7:  "07h"
+      8:  "08h"
+      9:  "09h"
+      10: "10h"
+      11: "11h"
+      12: "12h"
+      13: "13h"
+      14: "14h"
+      15: "15h"
+      16: "16h"
+      17: "17h"
+      18: "18h"
+      19: "19h"
+      20: "20h"
+      21: "21h"
+      22: "22h"
+      23: "23h"
+      24: "24h"
+
+# ----------------------
+# Buttons
+# ----------------------
+button:
+  - platform: restart
+    name: "Restart"
+
+  - platform: factory_reset
+    name: "Factory Reset"

@@ -1,0 +1,78 @@
+diff --git a/esphome/components/tuya/tuya.cpp b/esphome/components/tuya/tuya.cpp
+index a1acbf2f5..2e6984d23 100644
+--- a/esphome/components/tuya/tuya.cpp
++++ b/esphome/components/tuya/tuya.cpp
+@@ -92,49 +92,57 @@ bool Tuya::validate_message_() {
+   auto *data = &this->rx_message_[0];
+   uint8_t new_byte = data[at];
+ 
+-  // Byte 0: HEADER1 (always 0x55)
++  // Byte 0: HEADER1
+   if (at == 0)
+     return new_byte == 0x55;
+-  // Byte 1: HEADER2 (always 0xAA)
++
++  // Byte 1: HEADER2 (NEW)
+   if (at == 1)
++    return new_byte == 0x55;
++
++  // Byte 2: HEADER3
++  if (at == 2)
+     return new_byte == 0xAA;
+ 
+-  // Byte 2: VERSION
++  // Byte 3: VERSION
+   // no validation for the following fields:
+-  uint8_t version = data[2];
+-  if (at == 2)
+-    return true;
+-  // Byte 3: COMMAND
+-  uint8_t command = data[3];
++  uint8_t version = data[3];
+   if (at == 3)
+     return true;
+ 
++  uint8_t command = data[4];
++  if (at == 4)
++    return true;
++
+   // Byte 4: LENGTH1
+   // Byte 5: LENGTH2
+-  if (at <= 5) {
+-    // no validation for these fields
++  if (at <= 6)
+     return true;
+-  }
+ 
+-  uint16_t length = (uint16_t(data[4]) << 8) | (uint16_t(data[5]));
++  uint16_t length = (uint16_t(data[5]) << 8) | (uint16_t(data[6]));
+ 
+   // wait until all data is read
+-  if (at - 6 < length)
++  if (at - 7 < length)
+     return true;
+ 
+-  // Byte 6+LEN: CHECKSUM - sum of all bytes (including header) modulo 256
+   uint8_t rx_checksum = new_byte;
+   uint8_t calc_checksum = 0;
+-  for (uint32_t i = 0; i < 6 + length; i++)
++
++  // skip header (first 3 bytes)
++  for (uint32_t i = 3; i < 7 + length; i++)
+     calc_checksum += data[i];
+ 
++  calc_checksum -= 1;  // <-- REQUIRED FIX
++
++  // ESP_LOGW(TAG, "CHK debug: rx=%02X calc=%02X", rx_checksum, calc_checksum);
++
+   if (rx_checksum != calc_checksum) {
+     ESP_LOGW(TAG, "Tuya Received invalid message checksum %02X!=%02X", rx_checksum, calc_checksum);
+     return false;
+   }
+ 
+   // valid message
+-  const uint8_t *message_data = data + 6;
++  const uint8_t *message_data = data + 7;
+ #if ESPHOME_LOG_LEVEL >= ESPHOME_LOG_LEVEL_VERBOSE
+   char hex_buf[format_hex_pretty_size(MAX_DATAPOINT_LOG_BYTES)];
+   ESP_LOGV(TAG, "Received Tuya: CMD=0x%02X VERSION=%u DATA=[%s] INIT_STATE=%u", command, version,
