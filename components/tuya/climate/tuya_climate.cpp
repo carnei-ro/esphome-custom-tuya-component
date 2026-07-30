@@ -63,6 +63,7 @@ void TuyaClimate::setup() {
       if (this->reports_fahrenheit_) {
         this->current_temperature = (this->current_temperature - 32) * 5 / 9;
       }
+      this->current_temperature += this->current_temperature_offset_;
 
       ESP_LOGV(TAG, "MCU reported current temperature is: %.1f", this->current_temperature);
       this->compute_state_();
@@ -386,6 +387,9 @@ void TuyaClimate::dump_config() {
   auto current_temp_dp_id = this->current_temperature_id_;
   if (current_temp_dp_id.has_value()) {
     ESP_LOGCONFIG(TAG, "  Current Temperature has datapoint ID %u", *current_temp_dp_id);
+  }
+  if (this->current_temperature_offset_ != 0.0f) {
+    ESP_LOGCONFIG(TAG, "  Current Temperature offset is %.1f", this->current_temperature_offset_);
   }
   LOG_PIN("  Heating State Pin: ", this->heating_state_pin_);
   LOG_PIN("  Cooling State Pin: ", this->cooling_state_pin_);

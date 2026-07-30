@@ -30,6 +30,7 @@ CONF_CURRENT_TEMPERATURE_DATAPOINT = "current_temperature_datapoint"
 CONF_TEMPERATURE_MULTIPLIER = "temperature_multiplier"
 CONF_CURRENT_TEMPERATURE_MULTIPLIER = "current_temperature_multiplier"
 CONF_TARGET_TEMPERATURE_MULTIPLIER = "target_temperature_multiplier"
+CONF_CURRENT_TEMPERATURE_OFFSET = "current_temperature_offset"
 CONF_ECO = "eco"
 CONF_SLEEP = "sleep"
 CONF_SLEEP_DATAPOINT = "sleep_datapoint"
@@ -164,6 +165,7 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_TEMPERATURE_MULTIPLIER): cv.positive_float,
             cv.Optional(CONF_CURRENT_TEMPERATURE_MULTIPLIER): cv.positive_float,
             cv.Optional(CONF_TARGET_TEMPERATURE_MULTIPLIER): cv.positive_float,
+            cv.Optional(CONF_CURRENT_TEMPERATURE_OFFSET, default=0.0): cv.float_,
             cv.Optional(CONF_REPORTS_FAHRENHEIT, default=False): cv.boolean,
             cv.Optional(CONF_PRESET): PRESETS,
             cv.Optional(CONF_FAN_MODE): FAN_MODES,
@@ -240,6 +242,9 @@ async def to_code(config):
             CONF_TARGET_TEMPERATURE_MULTIPLIER
         ):
             cg.add(var.set_target_temperature_multiplier(target_temperature_multiplier))
+
+    if current_temperature_offset := config[CONF_CURRENT_TEMPERATURE_OFFSET]:
+        cg.add(var.set_current_temperature_offset(current_temperature_offset))
 
     if config[CONF_REPORTS_FAHRENHEIT]:
         cg.add(var.set_reports_fahrenheit())

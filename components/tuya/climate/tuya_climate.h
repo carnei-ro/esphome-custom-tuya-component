@@ -46,6 +46,9 @@ class TuyaClimate : public climate::Climate, public Component {
   void set_target_temperature_multiplier(float temperature_multiplier) {
     this->target_temperature_multiplier_ = temperature_multiplier;
   }
+  void set_current_temperature_offset(float temperature_offset) {
+    this->current_temperature_offset_ = temperature_offset;
+  }
   void set_eco_id(uint8_t eco_id) { this->eco_id_ = eco_id; }
   void set_eco_temperature(float eco_temperature) { this->eco_temperature_ = eco_temperature; }
   void set_sleep_id(uint8_t sleep_id) { this->sleep_id_ = sleep_id; }
@@ -100,6 +103,7 @@ class TuyaClimate : public climate::Climate, public Component {
   optional<uint8_t> current_temperature_id_{};
   float current_temperature_multiplier_{1.0f};
   float target_temperature_multiplier_{1.0f};
+  float current_temperature_offset_{0.0f};
   float hysteresis_{1.0f};
   optional<uint8_t> eco_id_{};
   optional<uint8_t> sleep_id_{};
